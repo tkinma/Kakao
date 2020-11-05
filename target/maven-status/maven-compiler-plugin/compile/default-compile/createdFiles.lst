@@ -1,0 +1,10 @@
+bookmarket\KakaoController.class
+bookmarket\SentMessage.class
+bookmarket\KakaoRepository.class
+bookmarket\PolicyHandler.class
+bookmarket\KakaoApplication.class
+bookmarket\AbstractEvent$1.class
+bookmarket\config\kafka\KafkaProcessor.class
+bookmarket\Shipped.class
+bookmarket\AbstractEvent.class
+bookmarket\Kakao.class
