@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: Kakao
+  name: kakao
   labels:
-    app: Kakao
+    app: kakao
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: Kakao
+      app: kakao
   template:
     metadata:
       labels:
-        app: Kakao
+        app: kakao
     spec:
       containers:
-        - name: Kakao
-          image: username/Kakao:latest
+        - name: kakao
+          image: admin35.azurecr.io/kakao:latest
           ports:
             - containerPort: 8080
           env:
