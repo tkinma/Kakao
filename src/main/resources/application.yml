@@ -56,13 +56,9 @@ spring:
                   serde: org.apache.kafka.common.serialization.Serdes$StringSerde
       bindings:
         event-in:
-          group: Kakao
+          group: kakao
           destination: bookmarket
           contentType: application/json
         event-out:
           destination: bookmarket
           contentType: application/json
-
-api:
-  payment:
-    url: ${payurl}

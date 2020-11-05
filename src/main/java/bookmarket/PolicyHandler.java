@@ -15,11 +15,25 @@ public class PolicyHandler{
 
     }
 
+    @Autowired
+    KakaoRepository kakaoRepository;
+
     @StreamListener(KafkaProcessor.INPUT)
     public void wheneverShipped_SendMessage(@Payload Shipped shipped){
 
         if(shipped.isMe()){
             System.out.println("##### listener SendMessage : " + shipped.toJson());
+
+            if(shipped.isMe()){
+                System.out.println("##### listener Ship : " + shipped.toJson());
+                Kakao kakao = new Kakao();
+                kakao.setOrderId(shipped.getOrderId());
+                kakao.setCustomerId(shipped.getCustomerId());
+                kakao.setStatus("Shipped");
+                kakao.setMessage(shipped.getOrderId() + " " + shipped.getCustomerId() + " Shipped...");
+
+                kakaoRepository.save(kakao);
+            }
         }
     }
 

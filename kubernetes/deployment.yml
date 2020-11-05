@@ -23,8 +23,8 @@ spec:
             - name: payurl
               valueFrom:
                 configMapKeyRef:
-                  name: apipayurl
-                  key: url
+                  name: LANG
+                  key: language
           readinessProbe:
             httpGet:
               path: '/actuator/health'
