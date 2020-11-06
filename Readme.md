@@ -99,7 +99,7 @@ mvn spring-boot:run
 cd Kakao
 mvn spring-boot:run  
 
-cd Kakaomng
+cd Kakaom
 mvn spring-boot:run 
 ```
 
