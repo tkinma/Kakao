@@ -486,7 +486,7 @@ root@siege:/# siege -c100 -t30S -v --content-type "application/json" 'http://kak
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
 ```
 kubectl get deploy payment -w
-```
+
 - 어느 정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다:
 
 NAME                               READY   STATUS    RESTARTS   AGE
@@ -569,7 +569,7 @@ replicaset.apps/payment-d87b4d88f         0         0         0       19h
 
 NAME                                        REFERENCE          TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
 horizontalpodautoscaler.autoscaling/kakao   Deployment/kakao   <unknown>/20%   1         20        1          7m30s
-
+```
 
 
 ## Liveness Probe 점검
