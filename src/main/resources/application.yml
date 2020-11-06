@@ -69,4 +69,4 @@ spring:
   hystrix:
     command:
       default:
-        execution.isolation.thread.timeoutInMilliseconds: 6
+        execution.isolation.thread.timeoutInMilliseconds: 10
