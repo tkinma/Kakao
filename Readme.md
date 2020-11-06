@@ -201,6 +201,7 @@ public interface KakaoRepository extends PagingAndSortingRepository<Kakao, Long>
 
 # 메시지 전송 누적 결과 확인 (CQRS)
 
+```
 root@labs--1345560735:~/scenario# sh 5*
 HTTP/1.1 200 OK
 Content-Type: application/hal+json;charset=UTF-8
@@ -291,6 +292,7 @@ transfer-encoding: chunked
         }
     }
 }
+
 ```
 
 
