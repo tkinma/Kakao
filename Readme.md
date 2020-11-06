@@ -70,7 +70,8 @@
         - General Domain:   Kakao : 메시지 서비스로 3rd Party 공인 서비스 사용
 
 ## 헥사고날 아키텍처 다이어그램 도출
-    
+
+![image](https://user-images.githubusercontent.com/20619166/98073892-acf6dd80-1eac-11eb-99ec-0a7521d96aca.PNG)
 ![image](https://user-images.githubusercontent.com/70673830/98327204-5cab8700-2036-11eb-8c31-72d97c3c5469.png)
 
     - 이벤트 흐름에서 Inbound adaptor와 Outbound adaptor를 구분함
@@ -698,9 +699,10 @@ Shortest transaction:           0.00
 배포기간중 Availability 가 평소 100%에서 90% 로 떨어지는 것을 확인. 이를 막기위해 Readiness Probe 설정 필요
 
 ```
-# deployment.yaml 의 readiness probe 의 설정 
+## deployment.yaml 의 readiness probe 의 설정 
+```
   initialDelaySeconds: 10
   timeoutSeconds: 2
   periodSeconds: 5
   failureThreshold: 10
-
+```
