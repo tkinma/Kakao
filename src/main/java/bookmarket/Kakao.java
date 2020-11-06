@@ -18,13 +18,18 @@ public class Kakao {
 
     @PrePersist
     public void onPrePersist(){
+
+        // 메시지 발송 전, 임의 부하 생성으로 Circuit Breader 확인
+        try {
+            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         SentMessage sentMessage = new SentMessage();
         BeanUtils.copyProperties(this, sentMessage);
         sentMessage.publishAfterCommit();
-
-
     }
-
 
     public Long getId() {
         return id;
@@ -61,8 +66,5 @@ public class Kakao {
     public void setMessage(String message) {
         this.message = message;
     }
-
-
-
 
 }
