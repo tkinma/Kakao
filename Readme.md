@@ -342,7 +342,7 @@ public class PolicyHandler{
     }
 
 메시지 서비스는 주요 시스템과 완전히 분리되어, 시스템에 영향이 없음.
-
+```
 
 ## gateway
 gateway 프로젝트 내 application.yml 에 두 개 서비스 추가 구성 (kakao, kakaomsg)
