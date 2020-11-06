@@ -596,7 +596,7 @@ horizontalpodautoscaler.autoscaling/kakao   Deployment/kakao   <unknown>/20%   1
 ![image](https://user-images.githubusercontent.com/70673849/98327879-e7d94c80-2037-11eb-95cd-4071deedfe26.png)
 
 - seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
-
+```
 root@siege:/# siege -c100 -t10S -v --content-type "application/json" 'http://kakao:8080/kakaos POST {"orderId": "111", "customerId": "33", "status": "Shipped", "message": "sss"}'
 ** SIEGE 4.0.4
 ** Preparing 100 concurrent users for battle.
