@@ -71,7 +71,7 @@
 
 ## 헥사고날 아키텍처 다이어그램 도출
     
-![image](https://user-images.githubusercontent.com/20619166/98073892-acf6dd80-1eac-11eb-99ec-0a7521d96aca.PNG)
+![image](https://user-images.githubusercontent.com/70673830/98327204-5cab8700-2036-11eb-8c31-72d97c3c5469.png)
 
     - 이벤트 흐름에서 Inbound adaptor와 Outbound adaptor를 구분함
     - 호출 관계에서 Pub/Sub 과 Req/Resp 를 구분함
@@ -81,7 +81,7 @@
 # 구현:
 
 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 Bounded Context 별로 대변되는 마이크로 서비스들을 Spring Boot 로 구현하였다. 
-구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다. (포트 넘버는 8081 ~ 8084 이다)
+구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다. (포트 넘버는 8081 ~ 8084, 8086, 8088 이다)
 
 ```
 cd Order
@@ -105,7 +105,7 @@ mvn spring-boot:run
 
 ## DDD 의 적용
 
-- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 Order 마이크로 서비스)
+- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 Kakao 마이크로 서비스)
 
 ```
 package bookmarket;
@@ -364,7 +364,7 @@ Github 소스 변경이 감지되면, CI 후 trigger 에 의해 CD까지 자동�
 
 ## Circuit Breaker 점검
 
-시나리오는 주문(Order)시의 연결을 RESTful Request/Response 로 연동하여 구현이 되어있고, 과도한 주문 요청 시 "circuitBreaker.requestVolumeThreshold"의 옵션을 통한 장애격리 구현.
+시나리오는 과도한 메시지 요청 시 "circuitBreaker.requestVolumeThreshold"의 옵션을 통한 장애격리 구현.
 
 ```
 ## Hystrix 설정
@@ -383,121 +383,103 @@ hystrix:
 ```
 ```
 호출 서비스(주문:order) 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다 갔다 하게
-# Order.java (Entity)
+# Kakao.java (Entity)
 
-    @PrePersist
-    public void onPrePersist(){  // 주문 저장 전 시간 끌기
-  
-        try {
-            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-    }
+![image](https://user-images.githubusercontent.com/70673849/98315182-fe24df80-201a-11eb-87de-c11980769635.png)
 ```
 
 ## 부하 발생을 통한 Circuit Breaker 점검
 ```
-root@siege-5c7c46b788-z8jxc:/# siege -c100 -t120S -v --content-type "application/json" 'http://Order:8080/orders POST {"bookId": "10", "qty": "1", "customerId": "1002"}'
+root@siege:/# siege -c100 -t30S -v --content-type "application/json" 'http://kakao:8080/kakaos POST {"orderId": "111", "customerId": "33", "status": "Shipped", "message": "sss"}'
 ** SIEGE 4.0.4
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
-HTTP/1.1 201     5.35 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.36 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.35 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.37 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.34 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.44 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.47 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.48 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.49 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     5.50 secs:     226 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.64 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.68 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.78 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.78 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     3.31 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.78 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.80 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.81 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.80 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     8.81 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    11.84 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    11.84 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    11.91 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    11.93 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    11.95 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    11.99 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    12.01 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     3.23 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    12.03 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    12.02 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.00 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.03 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201     3.25 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.19 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.21 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.21 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.23 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.23 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.28 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    15.25 secs:     228 bytes ==> POST http://Order:8080/orders
+HTTP/1.1 201     1.18 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     1.19 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     1.17 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     1.16 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     1.19 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     1.18 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.19 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.20 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.30 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.28 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.43 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.45 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.45 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.45 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.61 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.62 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.80 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.78 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.84 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.88 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.94 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.96 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     3.99 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     4.02 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     4.15 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     4.15 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     4.27 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     4.31 secs:     241 bytes ==> POST http://kakao:8080/kakaos
 
 * 과도한 요청으로 CB 작동 -> 요청 차단
 
-HTTP/1.1 500     2.26 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.29 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.28 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.47 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.22 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.48 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.29 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.30 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.29 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     2.27 secs:     248 bytes ==> POST http://Order:8080/orders
+HTTP/1.1 500     4.75 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.75 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.74 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.75 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.75 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.74 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.74 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.75 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.74 secs:     820 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 500     4.82 secs:     820 bytes ==> POST http://kakao:8080/kakaos
 
-* 요청을 어느 정도 차단 후, 기존에 밀린 일들이 처리되었고, 회로를 닫아 요청 처리
+* 정상 
 
-HTTP/1.1 201    18.05 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    18.05 secs:     228 bytes ==> POST http://Order:8080/orders
-
-* 다시 요청이 쌓이기 시작하여 건당 처리시간 부하 => 회로 열기 => 요청 실패처리
-
-HTTP/1.1 500     0.66 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     0.75 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     0.77 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     0.76 secs:     248 bytes ==> POST http://Order:8080/orders
-
-* 요청을 어느 정도 차단 후, 기존에 밀린 일들이 처리되었고, 회로를 닫아 요청 처리
-
-HTTP/1.1 201    18.25 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    18.31 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    18.32 secs:     228 bytes ==> POST http://Order:8080/orders
-
-HTTP/1.1 500     0.82 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     0.83 secs:     248 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 500     0.84 secs:     248 bytes ==> POST http://Order:8080/orders
-
-* 건당 (쓰레드당) 처리시간이 610 밀리 미만으로 회복 -> 요청 수락
-
-HTTP/1.1 201    18.35 secs:     228 bytes ==> POST http://Order:8080/orders
-HTTP/1.1 201    18.35 secs:     228 bytes ==> POST http://Order:8080/orders
+HTTP/1.1 201     0.83 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.89 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.48 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.48 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.55 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.56 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.56 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.63 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.64 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.64 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.85 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.79 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.56 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+^C
+Lifting the server siege...
+Transactions:                     78 hits
+Availability:                  88.64 %
+Elapsed time:                   5.77 secs
+Data transferred:               0.03 MB
+Response time:                  2.87 secs
+Transaction rate:              13.52 trans/sec
+Throughput:                     0.00 MB/sec
+Concurrency:                   38.76
+Successful transactions:          78
+Failed transactions:              10
+Longest transaction:            4.82
+Shortest transaction:           0.47
 
 ```
 - 시스템은 과도한 Data 생성 요청에 대한 지속적으로 CB 에 의하여 적절히 회로가 열림과 닫힘이 벌어지면서 자원을 보호하고 있음을 보여줌. 
-하지만 75.5% 가 성공하고 31.4%가 실패했다는 것은 사용성에 있어 좋지 않기 때문에 Retry 설정과 동적 Scale out (replica의 자동적 추가, HPA) 을 통하여 시스템을 확장 해주는 후속처리 필요.
+하지만 88.64성공하고 12.3%가 실패했다는 것은 사용성에 있어 좋지 않기 때문에 Retry 설정과 동적 Scale out (replica의 자동적 추가, HPA) 을 통하여 시스템을 확장 해주는 후속처리 필요.
 
 ### 오토스케일 아웃
 Circuite Breaker 는 시스템을 안정되게 운영할 수 있게 해줬지만, 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다. 
 
 - 결제서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 20프로를 넘어서면 replica 를 20개까지 늘려준다:
 ```
-kubectl autoscale deploy payment --cpu-percent=20 --min=1 --max=20 -n books
+kubectl autoscale deploy kakao --cpu-percent=20 --min=1 --max=20
 ```
 - Circuite Breaker 에서 했던 방식대로 워크로드를 2분 동안 걸어준다.
 ```
-siege -c100 -t120S -v --content-type "application/json" 'http://20.196.153.152:8080/orders POST {"bookId": "10", "qty": "1", "customerId":"1002"}'
+root@siege:/# siege -c100 -t30S -v --content-type "application/json" 'http://kakao:8080/kakaos POST {"orderId": "111", "customerId": "33", "status": "Shipped", "message": "sss"}'
 ```
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
 ```
@@ -505,66 +487,86 @@ kubectl get deploy payment -w
 ```
 - 어느 정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다:
 
-![image](https://user-images.githubusercontent.com/70673830/98115066-915df800-1ee9-11eb-9ebf-f2d79112bec9.png)
+NAME                               READY   STATUS    RESTARTS   AGE
+pod/customerview-bfc749846-vkknm   1/1     Running   0          11h
+pod/delivery-d77875bb4-mdwn6       1/1     Running   0          5h59m
+pod/gateway-7fbdf4c96-2sc9z        1/1     Running   0          6h41m
+pod/kakao-5b56b8b686-xwd6n         1/1     Running   2          10m
+pod/kakaomsg-558c69446d-nxlwk      1/1     Running   0          5h48m
+pod/order-76c9c8494-4449p          1/1     Running   1          9h
+pod/payment-7dd7984c8f-k7kzt       1/1     Running   0          11h
+pod/siege                          1/1     Running   0          75m
 
+NAME                   TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
+service/customerview   ClusterIP      10.0.161.71    <none>          8080/TCP         18h
+service/delivery       ClusterIP      10.0.205.39    <none>          8080/TCP         18h
+service/gateway        LoadBalancer   10.0.103.11    40.82.157.161   8080:31007/TCP   8h
+service/kakao          ClusterIP      10.0.203.207   <none>          8080/TCP         9h
+service/kakaomsg       ClusterIP      10.0.230.187   <none>          8080/TCP         6h5m
+service/kubernetes     ClusterIP      10.0.0.1       <none>          443/TCP          21h
+service/order          ClusterIP      10.0.106.158   <none>          8080/TCP         20h
+service/payment        ClusterIP      10.0.24.255    <none>          8080/TCP         19h
 
-- siege 의 로그를 보아도 전체적인 성공률이 높아진 것을 확인 할 수 있다. 
+NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/customerview   1/1     1            1           18h
+deployment.apps/delivery       1/1     1            1           18h
+deployment.apps/gateway        1/1     1            1           8h
+deployment.apps/kakao          1/1     1            1           11h
+deployment.apps/kakaomsg       1/1     1            1           6h5m
+deployment.apps/order          1/1     1            1           20h
+deployment.apps/payment        1/1     1            1           19h
 
-![image](https://user-images.githubusercontent.com/70673830/98115651-7f308980-1eea-11eb-833f-d606aaf6d6d9.png)
+NAME                                      DESIRED   CURRENT   READY   AGE
+replicaset.apps/customerview-5977db95fd   0         0         0       18h
+replicaset.apps/customerview-5d58796fbf   0         0         0       18h
+replicaset.apps/customerview-bfc749846    1         1         1       11h
+replicaset.apps/delivery-5d864f56d4       0         0         0       11h
+replicaset.apps/delivery-6c75956d69       0         0         0       5h59m
+replicaset.apps/delivery-8447b6fcdb       0         0         0       18h
+replicaset.apps/delivery-84ff995cdd       0         0         0       15h
+replicaset.apps/delivery-857d98dfcb       0         0         0       18h
+replicaset.apps/delivery-d77875bb4        1         1         1       5h59m
+replicaset.apps/gateway-5674b9d487        0         0         0       7h49m
+replicaset.apps/gateway-7768c6bf4d        0         0         0       7h43m
+replicaset.apps/gateway-7795789679        0         0         0       8h
+replicaset.apps/gateway-7fbdf4c96         1         1         1       6h41m
+replicaset.apps/gateway-7ff8c947f8        0         0         0       7h14m
+replicaset.apps/gateway-855459c4f8        0         0         0       8h
+replicaset.apps/gateway-d8b79ff46         0         0         0       7h56m
+replicaset.apps/gateway-f8cd5ff65         0         0         0       8h
+replicaset.apps/kakao-544974946d          0         0         0       22m
+replicaset.apps/kakao-59d7495d7b          0         0         0       11h
+replicaset.apps/kakao-5b56b8b686          1         1         1       10m
+replicaset.apps/kakao-5bb47c898           0         0         0       3h3m
+replicaset.apps/kakao-66f479bb7d          0         0         0       9h
+replicaset.apps/kakao-6c68dbbbdf          0         0         0       36m
+replicaset.apps/kakao-76f569ffb4          0         0         0       124m
+replicaset.apps/kakao-76ffd8555c          0         0         0       9h
+replicaset.apps/kakao-7bc9859ddc          0         0         0       135m
+replicaset.apps/kakao-b55bd5c4            0         0         0       32m
+replicaset.apps/kakao-fcbb5878c           0         0         0       27m
+replicaset.apps/kakaomsg-558c69446d       1         1         1       5h48m
+replicaset.apps/kakaomsg-57d7cf5969       0         0         0       5h54m
+replicaset.apps/kakaomsg-5c4985b88b       0         0         0       6h5m
+replicaset.apps/kakaomsg-795894f65f       0         0         0       6h5m
+replicaset.apps/order-5bb6cb44c8          0         0         0       19h
+replicaset.apps/order-656675c45d          0         0         0       9h
+replicaset.apps/order-66fdf5896f          0         0         0       13h
+replicaset.apps/order-67bd5d447d          0         0         0       20h
+replicaset.apps/order-6db44b9569          0         0         0       9h
+replicaset.apps/order-6f584d4b9           0         0         0       15h
+replicaset.apps/order-764bd469fc          0         0         0       9h
+replicaset.apps/order-76c9c8494           1         1         1       9h
+replicaset.apps/order-bd9f5f459           0         0         0       9h
+replicaset.apps/order-f8c7c5db8           0         0         0       13h
+replicaset.apps/order-f959cf8b            0         0         0       11h
+replicaset.apps/payment-54bdf678b7        0         0         0       19h
+replicaset.apps/payment-69575977c4        0         0         0       15h
+replicaset.apps/payment-7dd7984c8f        1         1         1       11h
+replicaset.apps/payment-d87b4d88f         0         0         0       19h
 
-
-
-## 무정지 재배포
-
-* 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
-
-- seige 로 배포작업 직전에 워크로드를 모니터링 함.
-```
-siege -c100 -t120S -r10 --content-type "application/json" 'http://customerview:8080/mypages POST {"orderId": "10", "qty": "1", "customerId": "1002"}'
-
-** SIEGE 4.0.5
-** Preparing 100 concurrent users for battle.
-The server is now under siege...
-
-HTTP/1.1 201     0.00 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.01 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.01 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.01 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.01 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.01 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.01 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.02 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.03 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.00 secs:     269 bytes ==> POST http://customerview:8080/mypages
-HTTP/1.1 201     0.00 secs:     269 bytes ==> POST http://customerview:8080/mypages
-:
-
-```
-
-- 새버전으로 재배포 (Azure DevOps Pipelines)
-
-- seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
-
-![image](https://user-images.githubusercontent.com/20619166/98184054-ca7b8400-1f4c-11eb-95ad-2949072ff912.png)
-
-
-배포기간중 Availability 가 평소 100%에서 90% 로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
-
-```
-# deployment.yaml 의 readiness probe 의 설정 
-  initialDelaySeconds: 10
-  timeoutSeconds: 2
-  periodSeconds: 5
-  failureThreshold: 10
-
-kubectl apply -f kubernetes/deployment.yaml
-```
-
-- 동일한 시나리오로 재배포 한 후 Availability 확인:
-
-![image](https://user-images.githubusercontent.com/20619166/98185439-fb10ed00-1f4f-11eb-8278-ae03158414fd.png)
-
-배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
+NAME                                        REFERENCE          TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/kakao   Deployment/kakao   <unknown>/20%   1         20        1          7m30s
 
 
 
@@ -576,120 +578,127 @@ kubectl apply -f kubernetes/deployment.yaml
 일정 시간 (30초)가 지나면 다시 파일을 삭제하고 Liveness 를 위한 서비스 수행한다.
 
 ### 설정 확인
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    test: orderLiveness
-  name: order
-  namespace: books
-spec:
-  containers:
-  - name: order
-    image: admin03.azurecr.io/order:V1
-    args:
-    - /bin/sh
-    - -c
-    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
-    livenessProbe:
-      exec:
-        command:
-        - cat
-        - /tmp/healthy
-      initialDelaySeconds: 5
-      periodSeconds: 5
-```
-#### 기존 서비스 삭제
-```
-kubectl delete service order -n books
-service "order" deleted
-```
 
-#### 기존 deploy 삭제
-```
-kubectl delete deploy order -n books
-deployment.apps "order" deleted
-```
-
-#### liveness 적용된 pod 생성
-```
-kubectl apply -f pod-exec-liveness.yaml
-```
+![image](https://user-images.githubusercontent.com/70673849/98324399-7bf2e600-202f-11eb-9eca-79b36ca342a5.png)
 
 #### liveness 적용된 order pod 의 상태 체크( 테스트 결과 )
+
+![image](https://user-images.githubusercontent.com/70673849/98324495-c2e0db80-202f-11eb-82a0-baa25213ad8c.png)
+
+
+## 무정지 재배포 (Readness Probe)
+
+* 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler, CB 설정을 제거함
+![image](https://user-images.githubusercontent.com/70673849/98325560-6e8b2b00-2032-11eb-930e-8de0939850c3.png)
+
+![image](https://user-images.githubusercontent.com/70673849/98327879-e7d94c80-2037-11eb-95cd-4071deedfe26.png)
+
+- seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
+
+root@siege:/# siege -c100 -t10S -v --content-type "application/json" 'http://kakao:8080/kakaos POST {"orderId": "111", "customerId": "33", "status": "Shipped", "message": "sss"}'
+** SIEGE 4.0.4
+** Preparing 100 concurrent users for battle.
+The server is now under siege...
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+
+Lifting the server siege...
+Transactions:                      0 hits
+Availability:                   0.00 %
+Elapsed time:                   9.51 secs
+Data transferred:               0.00 MB
+Response time:                  0.00 secs
+Transaction rate:               0.00 trans/sec
+Throughput:                     0.00 MB/sec
+Concurrency:                    0.00
+Successful transactions:           0
+Failed transactions:               9
+Longest transaction:            0.00
+Shortest transaction:           0.00
+ 
+root@siege:/# siege -c100 -t10S -v --content-type "application/json" 'http://kakao:8080/kakaos POST {"orderId": "111", "customerId": "33", "status": "Shipped", "message": "sss"}'
+** SIEGE 4.0.4
+** Preparing 100 concurrent users for battle.
+The server is now under siege...
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+
+Lifting the server siege...
+Transactions:                      0 hits
+Availability:                   0.00 %
+Elapsed time:                   9.41 secs
+Data transferred:               0.00 MB
+Response time:                  0.00 secs
+Transaction rate:               0.00 trans/sec
+Throughput:                     0.00 MB/sec
+Concurrency:                    0.00
+Successful transactions:           0
+Failed transactions:               9
+Longest transaction:            0.00
+Shortest transaction:           0.00
+ 
+root@siege:/# siege -c100 -t10S -v --content-type "application/json" 'http://kakao:8080/kakaos POST {"orderId": "111", "customerId": "33", "status": "Shipped", "message": "sss"}'
+** SIEGE 4.0.4
+** Preparing 100 concurrent users for battle.
+The server is now under siege...
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+[error] socket: unable to connect sock.c:249: Connection refused
+HTTP/1.1 201     1.31 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.03 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.02 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.06 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.02 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.06 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.03 secs:     239 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.02 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.01 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.01 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.02 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.00 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.02 secs:     241 bytes ==> POST http://kakao:8080/kakaos
+...
+HTTP/1.1 201     0.44 secs:     243 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.50 secs:     243 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.43 secs:     243 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.36 secs:     243 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.29 secs:     243 bytes ==> POST http://kakao:8080/kakaos
+HTTP/1.1 201     0.23 secs:     243 bytes ==> POST http://kakao:8080/kakaos
+
+Lifting the server siege...
+Transactions:                    756 hits
+Availability:                  90.60 %
+Elapsed time:                   9.42 secs
+Data transferred:               0.17 MB
+Response time:                  1.21 secs
+Transaction rate:              80.25 trans/sec
+Throughput:                     0.02 MB/sec
+Concurrency:                   96.79
+Successful transactions:         756
+Failed transactions:               3
+Longest transaction:            8.67
+Shortest transaction:           0.00
+
+배포기간중 Availability 가 평소 100%에서 90% 로 떨어지는 것을 확인. 이를 막기위해 Readiness Probe 설정 필요
+
 ```
-kubectl describe po order -n books
-```
+# deployment.yaml 의 readiness probe 의 설정 
+  initialDelaySeconds: 10
+  timeoutSeconds: 2
+  periodSeconds: 5
+  failureThreshold: 10
 
-#### 테스트 결과 이미지
-![image](https://user-images.githubusercontent.com/70673830/98134412-148b4800-1f02-11eb-9189-f38c401c0eb8.png)
-
-### 시나리오 2. TCP 포트 점검
-
-Order서비스의 deployment.yml의 liveness 설정을 tcp socket 방식의 8081 포트를 바라보도록 변경하여 restart여부를 확인한다.
-
-![image](https://user-images.githubusercontent.com/20619166/98126463-f8cf7400-1ef8-11eb-9246-89f425031a86.png)
-![image](https://user-images.githubusercontent.com/20619166/98126483-fd942800-1ef8-11eb-99d9-89481b2c62e4.png)
-![image](https://user-images.githubusercontent.com/20619166/98126511-0553cc80-1ef9-11eb-9a56-b564c70466d4.png)
-
-## Config Map
-```
-Order 서비스에 configmap.yml 파일을 생성한다.
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: apipayurl
-data:
-  url:  http://payment:8080
-```
-```
-Order 서버스의 deployment.yml에 configmap 파일을 참조할 수 있는 값을 추가한다.
-
-          env:
-            - name: payurl
-              valueFrom:
-                configMapKeyRef:
-                  name: apipayurl
-                  key: url
-```
-```
-Order 서버스의 apllication.yml에 deployment에 추가된 값을 참조하도록 추가한다.
-
-api:
-  payment:
-    url: ${payurl}
-```
-```
-Order 서버스의 PaymentService.java에 외부 값을 보도록 변경한다.
-
-@FeignClient(name="Payment", url="${api.payment.url}")
-public interface PaymentService {
-
-    @RequestMapping(method= RequestMethod.POST, path="/payments")
-    public void payReq(@RequestBody Payment payment);
-
-}
-```
-```
-configmap.yml 파일의 url을 임의의 값으로 변경 후 order 서비스의 호출을 확인한다.
-
-data:
-  url:  http://payment:8088
-
-root@labs--2023481703:~/src/bookmarket# http http://order:8080/orders bookId=101 qty=1 customerId=10002
-HTTP/1.1 500 Internal Server Error
-Content-Type: application/json;charset=UTF-8
-Date: Wed, 04 Nov 2020 16:17:34 GMT
-transfer-encoding: chunked
-
-{
-    "error": "Internal Server Error", 
-    "message": "Could not commit JPA transaction; nested exception is javax.persistence.RollbackException: Error while committing the transaction", 
-    "path": "/orders", 
-    "status": 500, 
-    "timestamp": "2020-11-04T16:17:34.521+0000"
-}
-
-```
